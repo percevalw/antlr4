@@ -41,28 +41,28 @@ function ATN(grammarType , maxTokenType) {
 //  If {@code ctx} is null, the set of tokens will not include what can follow
 //  the rule surrounding {@code s}. In other words, the set will be
 //  restricted to tokens reachable staying within {@code s}'s rule.
-ATN.prototype.nextTokensInContext = function(s, ctx) {
+ATN.prototype.nextTokensInContext = function(s, ctx, parser) {
     var anal = new LL1Analyzer(this);
-    return anal.LOOK(s, null, ctx);
+    return anal.LOOK(s, null, ctx, parser);
 };
 
 // Compute the set of valid tokens that can occur starting in {@code s} and
 // staying in same rule. {@link Token//EPSILON} is in set if we reach end of
 // rule.
-ATN.prototype.nextTokensNoContext = function(s) {
-    if (s.nextTokenWithinRule !== null ) {
+ATN.prototype.nextTokensNoContext = function(s, parser) {
+    if (s.nextTokenWithinRule !== null && !parser) {
         return s.nextTokenWithinRule;
     }
-    s.nextTokenWithinRule = this.nextTokensInContext(s, null);
+    s.nextTokenWithinRule = this.nextTokensInContext(s, null, parser);
     s.nextTokenWithinRule.readOnly = true;
     return s.nextTokenWithinRule;
 };
 
-ATN.prototype.nextTokens = function(s, ctx) {
+ATN.prototype.nextTokens = function(s, ctx, parser) {
     if ( ctx===undefined ) {
-        return this.nextTokensNoContext(s);
+        return this.nextTokensNoContext(s, parser);
     } else {
-        return this.nextTokensInContext(s, ctx);
+        return this.nextTokensInContext(s, ctx, parser);
     }
 };
 
@@ -111,12 +111,12 @@ ATN.prototype.getDecisionState = function( decision) {
 // number {@code stateNumber}
 var Token = require('./../Token').Token;
 
-ATN.prototype.getExpectedTokens = function( stateNumber, ctx ) {
+ATN.prototype.getExpectedTokens = function( stateNumber, ctx, parser ) {
     if ( stateNumber < 0 || stateNumber >= this.states.length ) {
         throw("Invalid state number.");
     }
     var s = this.states[stateNumber];
-    var following = this.nextTokens(s);
+    var following = this.nextTokens(s, undefined, parser);
     if (!following.contains(Token.EPSILON)) {
         return following;
     }
@@ -126,7 +126,7 @@ ATN.prototype.getExpectedTokens = function( stateNumber, ctx ) {
     while (ctx !== null && ctx.invokingState >= 0 && following.contains(Token.EPSILON)) {
         var invokingState = this.states[ctx.invokingState];
         var rt = invokingState.transitions[0];
-        following = this.nextTokens(rt.followState);
+        following = this.nextTokens(rt.followState, undefined, parser);
         expected.addSet(following);
         expected.removeOne(Token.EPSILON);
         ctx = ctx.parentCtx;

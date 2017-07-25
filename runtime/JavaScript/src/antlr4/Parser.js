@@ -579,7 +579,7 @@ Parser.prototype.isExpectedToken = function(symbol) {
 // @see ATN//getExpectedTokens(int, RuleContext)
 //
 Parser.prototype.getExpectedTokens = function() {
-	return this._interp.atn.getExpectedTokens(this.state, this._ctx);
+	return this._interp.atn.getExpectedTokens(this.state, this._ctx, this);
 };
 
 Parser.prototype.getExpectedTokensWithinCurrentRule = function() {
